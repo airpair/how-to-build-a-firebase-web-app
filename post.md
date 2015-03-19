@@ -60,7 +60,7 @@ At first we need to include the Firebase javascript libraries that we're going t
 
 There is also a ```div``` element included with ```app``` id, this is to be used in app further. Here is how ```index.html``` looks like after these libraries are in place:
 
-```html,linenums=true
+```markup,linenums=true
 <!doctype html>
 <html class="no-js" lang="">
     <head>
