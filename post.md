@@ -338,7 +338,7 @@ Here is the structure I've ended up with:
 
 ```cache``` object is not important at this point. It's used on backend while sending emails, we will talk about it later.
 
-```coffeescript,linenubers=true
+```coffeescript,linenums=true
 class Dashboard
   constructor: (@$rootEl, @firebase) ->
     @subscriptionCollection = []
@@ -431,7 +431,7 @@ Subscription class is used to add UI element representing subscription item and 
 
 ```ref``` returns firebase data reference which is used when we need to delete subscription.
 
-```coffeescript,linenumbers=true
+```coffeescript,linenums=true
 class Subscription
   constructor: (@$rootEl, @snapshot) ->
     @_render()
@@ -509,7 +509,7 @@ App should be available via URL: ```your-app-name.firebaseapp.com``` — and loo
 
 ## Backend
 
-On the backend we need to make a cron job that checks rss feeds for new items and send updates to subscribed users via email. This is implemented with node.js and deployed on Heroku.
+On the backend we need to make a cron job that checks rss feeds for new items and send updates to subscribed users via email. This is implemented with **node.js** and deployed on **Heroku**.
 
 Sources on github: [rss.rocks-nodejs](https://github.com/slate-studio/rss.rocks-nodejs).
 
@@ -517,7 +517,7 @@ After creating an app on Heroku, there are two plugins to be added to the projec
   1. Scheduler: [https://addons.heroku.com/scheduler](https://addons.heroku.com/scheduler)
   2. Postmark: [https://addons.heroku.com/postmark](https://addons.heroku.com/postmark)
 
-The first one is to run  a cron job and the second one sends emails. You'll need to do some domain configuration to send emails from a custom domain email address.
+The first one is to run a cron job and the second one sends RSS updates via an email. You'll need to do some domain configuration to send emails from a custom domain email address.
 
 Please checkout the [repository](https://github.com/slate-studio/rss.rocks-nodejs) for implementation details.
 
