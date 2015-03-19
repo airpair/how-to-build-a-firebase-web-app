@@ -1,6 +1,6 @@
 This is a quick tutorial on how to build a basic web application using  Firebase data API.
 
-I'm going to build RSS subscription application (oh yes, it's not a TODO app!) that allows a user to manage website subscriptions (frontend), tracks updates via RSS and sends updates to the users email (backend).
+I'm going to build RSS subscription application (**oh yes, it's not a TODO app!**) that allows a user to manage website subscriptions (frontend), tracks updates via RSS and sends updates to the users email (backend).
 
 There are three parties that will be involved:
 
