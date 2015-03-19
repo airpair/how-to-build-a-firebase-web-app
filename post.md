@@ -25,7 +25,7 @@ Having all that ready let's jump to the code.
 
 Please check out the deployed app to see what we are about to build:  [rss-rocks.firebaseapp.com](http://rss-rocks.firebaseapp.com/).
 
-Sources can be found on github: ​[https://github.com/slate-studio/rss.rocks-firebase](https://github.com/slate-studio/rss.rocks-firebase).
+Sources can be found on github: ​[https://github.com/alexkravets/rss.rocks-firebase](https://github.com/alexkravets/rss.rocks-firebase).
 
 First let's create an HTML foundation for the app — create a folder and pull [html5-boilerplate](https://github.com/h5bp/html5-boilerplate) repo from github:
 
@@ -75,8 +75,7 @@ There is also a ```div``` element included with ```app``` id, this is to be used
         <link rel="stylesheet" href="css/main.css">
         
         <script src="js/vendor/modernizr-2.8.0.min.js"></script>
-        <script type='text/javascript' src='https://cdn.firebase.com/js/client/1.0.17/firebase.js'></script>
-        <script type='text/javascript' src='https://cdn.firebase.com/js/simple-login/1.6.1/firebase-simple-login.js'></script>
+        <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js"></script>
     </head>
     <body>
         <div id='app'></div>
@@ -96,6 +95,7 @@ Let's start with ```/coffee/_main.coffee``` file. This integrates all applicatio
 $ ->
   firebaseAppName = 'rss-rocks'
   window.app = new App(firebaseAppName)
+  app.start()
 ```
 
 **rss-rocks** is the Firebase application name in my case, for you it should be something that you've chosen or some random string provided by Firebase as default app.
@@ -119,23 +119,25 @@ class App
   
   render: ->
     @dashView = new Dashboard @$el, @firebase
-    @authView = new Authentication @$el, @firebase, (@user) =>
-      @show(@dashView)
-  
+
   show: (view) ->
     @currentView?.hide()
     @currentView = view
     @currentView.show()
+
+  start: ->
+    @authView = new Authentication @$el, @firebase, (@user) =>
+      @show(@dashView)
 ```
 
-The Authentication view implements auth logic for users and gets a callback as the last parameter that's called when the user is logged in — it shows the users dashboard.
+```Authentication``` view created when app starts, it implements auth logic for users and gets a callback as the last parameter that's called when the user is logged in — it shows the users dashboard.
 
 
 ### authentication.coffee
 
-Firebase handles most of the authentication for you. In our app, login via email is used. This feature has to be enabled in app settings, go to your firebase account page: [https://www.firebase.com/account](https://www.firebase.com/account) and select app. There in Simple Login tab select "Email & Password" section and check "Enabled" checkbox.
+Firebase handles most of the authentication for you. In our app, login via email is used. This feature has to be enabled in app settings, go to your firebase account page: [https://www.firebase.com/account](https://www.firebase.com/account) and select app. In *"Login & Auth"* tab select *"Email & Password"* section and check *"Enabled"* checkbox.
 
-![Firebase Authentication Enable](//slate13-media.s3.amazonaws.com/uploads/character/images/53d119976336366f90020000/regular_firebase-app-simplelogin.png)
+![Firebase Authentication Enable](//slate-git-images.s3.amazonaws.com/regular_firebase-app-simplelogin.png)
 
 Authentication class implements UI for sign in/up/out functionality and integrates Firebase user auth mechanics.
 
@@ -143,110 +145,135 @@ Authentication class implements UI for sign in/up/out functionality and integrat
 class Authentication
   constructor: (@$rootEl, @firebase, @onAuthCb) ->
     @usersRef = @firebase.child('users')
+
     @_render()
     @_ui()
     @_bind()
     @_authenticate()
-  
+
   _render: ->
     @$rootEl.append """
       <section id='auth' style='display:none;'>
         <p>Welcome to <strong>RSS.rocks</strong>!</p>
+
         <form id='auth_form'>
           <input id='auth_email' value='' placeholder='email' type='email' required>
           <input id='auth_password' value='' placeholder='password' type='password' required>
           <input id='auth_submit' value='login' type='submit'>
+
           <span id='auth_loading' style='display:none;'>please wait...</span>
         </form>
         <p id='auth_error' class='error'></p>
-        <p id='auth_signup_info'>&mdash; if you have an account, please <a id='auth_login_btn' href='#'>login</a></p>
-        <p id='auth_login_info'>&mdash; if you don't have an account, please <a id='auth_signup_btn' href='#'>signup</a><br>
-          &mdash; if you forgot your password, <a id='auth_reset_password' href='#'>reset</a> it via an email</p>
+        <p id='auth_signup_info'>— if you have an account, please <a id='auth_login_btn' href='#'>login</a></p>
+        <p id='auth_login_info'>— if you don't have an account, please <a id='auth_signup_btn' href='#'>signup</a><br>
+          — if you forgot your password, <a id='auth_reset_password' href='#'>reset</a> it via an email</p>
       </section>
     """
-  
+
   _ui: ->
-    @$el         =$ '#auth'
-    @$form       =$ '#auth_form'
-    @$email      =$ '#auth_email'
-    @$password   =$ '#auth_password'
-    @$submitBtn  =$ '#auth_submit'
-    @$loading    =$ '#auth_loading'
-    @$error      =$ '#auth_error'
-    @$loginBtn   =$ '#auth_login_btn'
-    @$signupBtn  =$ '#auth_signup_btn'
-    @$resetBtn   =$ '#auth_reset_password'
-    @$loginInfo  =$ '#auth_login_info'
-    @$signupInfo =$ '#auth_signup_info'
-  
+    @$el         = $ '#auth'
+    @$form       = $ '#auth_form'
+    @$email      = $ '#auth_email'
+    @$password   = $ '#auth_password'
+    @$submitBtn  = $ '#auth_submit'
+    @$loading    = $ '#auth_loading'
+    @$error      = $ '#auth_error'
+
+    @$loginBtn   = $ '#auth_login_btn'
+    @$signupBtn  = $ '#auth_signup_btn'
+    @$resetBtn   = $ '#auth_reset_password'
+
+    @$loginInfo  = $ '#auth_login_info'
+    @$signupInfo = $ '#auth_signup_info'
+
   _bind: ->
     @$loginBtn.on  'click',  (e) => @showLogin()          ; false
     @$signupBtn.on 'click',  (e) => @showSignup()         ; false
     @$resetBtn.on  'click',  (e) => @resetPassword()      ; false
     @$form.on      'submit', (e) => @formSubmitCallback() ; false
-  
+
   _authenticate: ->
-    @auth = new FirebaseSimpleLogin @firebase, (error, user) =>
+    @firebase.onAuth (authData) =>
       @$loading.hide()
-      if user
-        @onAuthCb?(user)
+
+      if authData
+        email = authData['password'].email
+        @usersRef.child(authData.uid).child('email').set(email)
+
+        @onAuthCb?(authData)
       else
         app.show(this)
-      if error
-        @error(error.message.replace('FirebaseSimpleLogin: ', ''))
-  
+
   signup: ->
     email    = @$email.val()
     password = @$password.val()
+
     @$loading.show()
-    @auth.createUser email, password, (error, user) =>
+
+    @firebase.createUser({
+      email:    email
+      password: password
+    }, ((error, authData) =>
       @$loading.hide()
+
       if error
-        @error(error.message.replace('FirebaseSimpleLogin: ', ''))
+        @error(error.message)
       else
-        @usersRef.child(user.uid).child('email').set(user.email)
-        @onAuthCb?(user)
-  
-  login: ->
+        @login(email, password)
+    ))
+
+  login: (email, password) ->
     @$loading.show()
-    @auth.login 'password', {
-      email: @$email.val(),
-      password: @$password.val(),
-      rememberMe: true
-    }
-  
+
+    email    ?= @$email.val()
+    password ?= @$password.val()
+
+    @firebase.authWithPassword({
+      email:      email
+      password:   password
+    },
+    ((error, authData) =>
+      @$loading.hide()
+
+      if error
+        @error(error.message)
+    ))
+
   show: ->
     @showLogin()
     @$el.show()
+
     @$email.focus()
-  
+
   hide: ->
     @$el.hide()
-  
+
   showLogin: ->
     @formSubmitCallback = @login
     @$submitBtn.val('login')
     @$loginInfo.show()
     @$signupInfo.hide()
     @$error.html('')
-  
+
   showSignup: ->
     @formSubmitCallback = @signup
     @$submitBtn.val('signup')
     @$signupInfo.show()
     @$loginInfo.hide()
     @$error.html('')
-  
+
   logout: ->
-    @auth.logout() ; delete app.user
+    @firebase.unauth() ; delete app.user
+
     @$email.val('')
     @$password.val('')
     @$error.html('')
+
     app.show(this)
-  
+
   error: (msg) ->
     @$error.html(msg)
-  
+
   resetPassword: ->
 ```
 
@@ -254,12 +281,15 @@ class Authentication
 
 ```_authenticate``` method creates the handler for firebase auth result and check if user is signed in. If user is signed in it calls callback passed in application, which shows Dashboard view otherwise Authentication view is shown.
 
-```login``` method is triggered when user fills in auth fields and click login. It only sends auth parameters to Firebase server, no callbacks here. The one defined in ```_authenticate``` function is used to process Firebase simple login reply.
+```login``` method is triggered when user fills in auth fields and click login. It sends auth parameters to Firebase server, callback is set for errors handling. If user successfuly signed in ```@firebase.onAuth``` method is called which has been defined in ```_authenticate``` function.
 
-```signup``` method creates a new user. This one has a callback that should process errors like *"email is already taken"*. If a user is created they are automatically authorized and the users email is saved to the database so we know where to send updates. Here is the line that does the trick, I'll explain it in the Dashboard section:
+```signup``` method creates a new user. This one has a callback that should process errors like *"email is already taken"*. If new user is created we pass credentials to ```login``` method to authenticate user. 
+
+```login``` method saves users email to the database, this is used to send RSS feed updates. Here is the line that does the trick, we'll come back to this in the Dashboard section:
 
 ```coffeescript
-@usersRef.child(user.uid).child('email').set(user.email)
+email = authData['password'].email
+@usersRef.child(authData.uid).child('email').set(email)
 ```
 
 This is pretty much everything noteworthy regarding authentication. As you can see there are only three functions required to implement user sign in/up feature. There are also ```logout``` and ```resetPassword``` (to be implemented) methods but they are pretty trivial and self explanatory.
@@ -304,7 +334,7 @@ Here is the structure I've ended up with:
 
 ![Firebase Data Scheme Demo](//slate13-media.s3.amazonaws.com/uploads/character/images/53d123b06336366fbd010000/regular_firebase-app-data.png)
 
-```simplelogin:3``` is a unique user id which is provided for each authorized user by Firebase simple login. So for every signed in user we know which subscriptions to show.
+```simplelogin:3``` is a unique user id which is provided for each authorized user by Firebase password login. So for every signed in user we know which subscriptions to show.
 
 ```cache``` object is not important at this point. It's used on backend while sending emails, we will talk about it later.
 
@@ -324,7 +354,7 @@ class Dashboard
           <p>
             <form id='subscriptions_new_form'>
               <input id='subscriptions_new_name' placeholder='name' />
-              <input id='subscriptions_new_url' placeholder='rss feed link' type='url' />
+              <input id='subscriptions_new_url' placeholder='link to rss feed' type='url' />
               <input id='subscriptions_new_submit' value='Add' type='submit' />
             </form>
           </p>
@@ -344,7 +374,7 @@ class Dashboard
   
   show: ->
     @uid       = app.user.uid
-    @userEmail = app.user.email
+    @userEmail = app.user[app.user.provider].email
     @$email.html(@userEmail)
     @subscriptionsRef = @firebase.child('users').child(@uid).child('subscriptions')
     @subscriptionsRef.on 'child_added', (snapshot) =>
